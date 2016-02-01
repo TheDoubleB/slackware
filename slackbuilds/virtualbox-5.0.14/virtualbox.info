@@ -1,0 +1,16 @@
+PRGNAM="virtualbox"
+VERSION="5.0.14"
+HOMEPAGE="http://www.virtualbox.org"
+DOWNLOAD="http://download.virtualbox.org/virtualbox/5.0.14/VirtualBox-5.0.14.tar.bz2 \
+          http://download.virtualbox.org/virtualbox/5.0.14/VBoxGuestAdditions_5.0.14.iso \
+          http://download.virtualbox.org/virtualbox/5.0.14/UserManual.pdf \
+          http://download.virtualbox.org/virtualbox/5.0.14/SDKRef.pdf"
+MD5SUM="e0a02426ad09b475e630881efe911423 \
+        875b430362791acdc5c9340220d39b75 \
+        2d6b50476398749021798e68a27934be \
+        e5a715e27d984ba58ce87246b92a9dd5"
+DOWNLOAD_x86_64=""
+MD5SUM_x86_64=""
+REQUIRES="acpica virtualbox-kernel"
+MAINTAINER="Beebz"
+EMAIL=""
