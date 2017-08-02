@@ -1,0 +1,16 @@
+PRGNAM="virtualbox"
+VERSION="5.1.26"
+HOMEPAGE="https://www.virtualbox.org"
+DOWNLOAD="http://download.virtualbox.org/virtualbox/5.1.26/VirtualBox-5.1.26.tar.bz2 \
+          http://download.virtualbox.org/virtualbox/5.1.26/VBoxGuestAdditions_5.1.26.iso \
+          http://download.virtualbox.org/virtualbox/5.1.26/UserManual.pdf \
+          http://download.virtualbox.org/virtualbox/5.1.26/SDKRef.pdf"
+MD5SUM="d3aec8190c649d7e0d92ba374779dfe3 \
+        ffc947342461ddf05a1cf2ef12e58076 \
+        396be93a935b569b67b4515a75ea2ea6 \
+        7de5e9920b3be1ca83a59dde19b101b2"
+DOWNLOAD_x86_64=""
+MD5SUM_x86_64=""
+REQUIRES="acpica virtualbox-kernel"
+MAINTAINER="Beebz"
+EMAIL=""

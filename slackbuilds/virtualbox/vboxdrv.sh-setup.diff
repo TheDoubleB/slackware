@@ -1,0 +1,63 @@
+--- /tmp/SBo/VirtualBox-5.1.26/src/VBox/Installer/linux/vboxdrv.sh	2017-07-27 15:18:22.000000000 +0200
++++ /disk/home/beebee/Temporary/_modified_vboxdrv.sh	2017-08-02 18:54:39.135246693 +0200
+@@ -52,14 +52,12 @@
+ export USER=$USERNAME
+ 
+ if test -n "${INSTALL_DIR}" && test -x "${INSTALL_DIR}/VirtualBox"; then
+-    MODULE_SRC="${INSTALL_DIR}/src/vboxhost"
++    :
+ elif test -x /usr/lib/virtualbox/VirtualBox; then
+     INSTALL_DIR=/usr/lib/virtualbox
+-    MODULE_SRC="/usr/share/virtualbox/src/vboxhost"
+ elif test -x "${SCRIPT_DIR}/VirtualBox"; then
+     # Executing from the build directory
+     INSTALL_DIR="${SCRIPT_DIR}"
+-    MODULE_SRC="${INSTALL_DIR}/src"
+ else
+     # Silently exit if the package was uninstalled but not purged.
+     # Applies to Debian packages only (but shouldn't hurt elsewhere)
+@@ -67,7 +65,6 @@
+ fi
+ VIRTUALBOX="${INSTALL_DIR}/VirtualBox"
+ VBOXMANAGE="${INSTALL_DIR}/VBoxManage"
+-BUILDINTMP="${MODULE_SRC}/build_in_tmp"
+ if test -u "${VIRTUALBOX}"; then
+     GROUP=root
+     DEVICE_MODE=0600
+@@ -387,35 +384,7 @@
+ # setup_script
+ setup()
+ {
+-    begin_msg "Building VirtualBox kernel modules" console
+-    if ! $BUILDINTMP \
+-        --save-module-symvers /tmp/vboxdrv-Module.symvers \
+-        --module-source "$MODULE_SRC/vboxdrv" \
+-        --no-print-directory install >> $LOG 2>&1; then
+-        "${INSTALL_DIR}/check_module_dependencies.sh"
+-        failure "Look at $LOG to find out what went wrong"
+-    fi
+-    if ! $BUILDINTMP \
+-        --use-module-symvers /tmp/vboxdrv-Module.symvers \
+-        --module-source "$MODULE_SRC/vboxnetflt" \
+-        --no-print-directory install >> $LOG 2>&1; then
+-        failure "Look at $LOG to find out what went wrong"
+-    fi
+-    if ! $BUILDINTMP \
+-        --use-module-symvers /tmp/vboxdrv-Module.symvers \
+-        --module-source "$MODULE_SRC/vboxnetadp" \
+-        --no-print-directory install >> $LOG 2>&1; then
+-        failure "Look at $LOG to find out what went wrong"
+-    fi
+-    if ! $BUILDINTMP \
+-        --use-module-symvers /tmp/vboxdrv-Module.symvers \
+-        --module-source "$MODULE_SRC/vboxpci" \
+-        --no-print-directory install >> $LOG 2>&1; then
+-        failure "Look at $LOG to find out what went wrong"
+-    fi
+-    rm -f /etc/vbox/module_not_compiled
+-    depmod -a
+-    succ_msg "VirtualBox kernel modules built"
++    echo "Not implemented! Please use the virtualbox-kernel.SlackBuild available at SlackBuilds.org instead."
+ }
+ 
+ dmnstatus()
