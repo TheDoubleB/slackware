@@ -1,0 +1,375 @@
+#!/bin/bash
+
+#
+# CONFIG VARS
+#
+
+PRGNAME=kernel-custom
+VERSION=${VERSION:-}
+CONFIG=${CONFIG:-} # Path to .config file; if left empty, currently running kernel config $(zcat /proc/config.gz) will be used
+MENUCONFIG=${MENUCONFIG:-no}
+BUILD=${BUILD:-1}
+TAG=${TAG:-beebz}
+PKGSOURCE=${PKGSOURCE:-yes} # Include source code into the package
+PKGEXT=${PKGEXT:-txz}
+OUTPUT=${OUTPUT:-/tmp}
+TMP=${TMP:-/tmp/beebz}
+
+if [ -z "$ARCH" ]
+then
+	ARCH=$(uname -m)
+	case "$ARCH" in
+		i?86) ARCH=i486 ;;
+		arm*) ARCH=arm ;;
+	esac
+fi
+
+MULTICORE=${MULTICORE:-1}
+
+
+#
+# CHECK/SET CONFIG VARS
+#
+
+set -e
+
+_SCRIPT_PATH="$(realpath "$0")"
+_SCRIPT_DIR="$(dirname "$_SCRIPT_PATH")"
+_SCRIPT_NAME="$(basename "$_SCRIPT_PATH")"
+
+# If $VERSION not specified, try deducing it from a "linux-$VERSION.tar.xz" file
+_deduce_version()
+{
+	if [ -z "$VERSION" ]
+	then
+		local _SRC_SEARCH_PATH="$_SCRIPT_DIR/linux-*.tar.xz"
+		for _FILE in $(ls $_SRC_SEARCH_PATH 2>/dev/null) # do not encapsulate $_SRC_SEARCH_PATH in quotes
+		do
+			if [ -n "$VERSION" ]
+			then
+				echo "* ERROR: More than one file found in search path: $_SRC_SEARCH_PATH" >&2
+				echo "* FIX: Run script my specifying the version manually; e.g.: \`VERSION=4.12.2 $0\`" >&2
+				exit 1
+			fi
+			
+			VERSION=$(basename "$_FILE" | sed -r 's/^linux-//; s/\.tar\.xz$//')
+		done
+		
+		if [ -z "$VERSION" ]
+		then
+			echo "* ERROR: No file found in search path: $_SRC_SEARCH_PATH" >&2
+			echo "* FIX: Ensure there is Linux kernel source tarball in directory: $_SCRIPT_DIR" >&2
+			exit 1
+		fi
+	fi
+}
+_deduce_version
+
+# Check for Linux source tarball existence
+_SOURCE_TARBALL="$_SCRIPT_DIR/linux-$VERSION.tar.xz"
+if [ ! -f "$_SOURCE_TARBALL" ]
+then
+	echo "* ERROR: No such file: $_SOURCE_TARBALL" >&2
+	echo "* FIX: Ensure Linux kernel source tarball exists: $_SOURCE_TARBALL" >&2
+	exit 1
+fi
+
+# Check for specified config file
+if [ -f "$CONFIG" ]
+then
+	CONFIG="$(realpath "$CONFIG")"
+elif [ -n "$CONFIG" ]
+then
+	echo "* ERROR: No such file: $CONFIG" >&2
+	echo "* FIX: Ensure specified config file exists: $CONFIG" >&2
+	exit 1
+fi
+
+# Check for $MENUCONFIG setting
+if [ "$MENUCONFIG" != "yes" -a "$MENUCONFIG" != "no" ]
+then
+	echo "* ERROR: Invalid value MENUCONFIG=$MENUCONFIG" >&2
+	echo "* FIX: Only valid values for MENUCONFIG are 'yes' or 'no' (lower-case)" >&2
+	exit 1
+fi
+
+# Check for $PKGSOURCE setting
+if [ "$PKGSOURCE" != "yes" -a "$PKGSOURCE" != "no" ]
+then
+	echo "* ERROR: Invalid value PKGSOURCE=$PKGSOURCE" >&2
+	echo "* FIX: Only valid values for PKGSOURCE are 'yes' or 'no' (lower-case)" >&2
+	exit 1
+fi
+
+# Check if $OUTPUT dir exists
+mkdir -p "$OUTPUT"
+if [ ! -d "$OUTPUT" ];
+then
+	echo "* ERROR: Output directory creation failed: $OUTPUT" >&2
+	echo "* FIX: Make sure this script has sufficient permission to create output directory: $OUTPUT" >&2
+	exit 1
+fi
+
+# Try to create $TMP dir
+mkdir -p "$TMP"
+if [ ! -d "$TMP" ];
+then
+	echo "* ERROR: Temporary directory creation failed: $TMP" >&2
+	echo "* FIX: Make sure this script has sufficient permission to create temporary directory: $TMP" >&2
+	exit 1
+fi
+
+
+#
+# GENERATE INTERNAL VARS
+#
+
+_PACKAGE_ROOT="$TMP/package-$PRGNAME"
+_PACKAGE_OUTPUT="$OUTPUT/$PRGNAME-$VERSION-$ARCH-$BUILD$TAG.$PKGEXT"
+
+
+#
+# PRINT OVERVIEW
+#
+
+echo "*"
+echo "* Overview of kernel building setup:"
+echo "* -- Version to build: $VERSION ($VERSION$TAG)"
+echo "* -- Source tarball: $_SOURCE_TARBALL"
+if [ -f "$CONFIG" ]
+then
+	echo "* -- Config file: $CONFIG"
+else
+	echo "* -- Config file: (not specified; using currently running kernel configuration)"
+fi
+echo "* -- Run menuconfig: $MENUCONFIG"
+echo "* -- Include source code: $PKGSOURCE"
+echo "* -- Multi-core compile: $MULTICORE"
+echo "* -- Package output: $_PACKAGE_OUTPUT"
+echo "*"
+echo -n "* Press enter to start or CTRL+C to exit script..."
+read
+
+
+#
+# PREPARE FOR BUILD
+#
+
+_prepare_source_dir()
+{
+	# Unpack source
+	rm -rf "$_PACKAGE_ROOT"
+	_SOURCE_DIR="$_PACKAGE_ROOT/_rw/usr/src"
+	mkdir -p "$_SOURCE_DIR"
+	cd "$_SOURCE_DIR"
+	tar xvf "$_SOURCE_TARBALL"
+
+	# Rename source dir to include $TAG
+	_SOURCE_DIR="$_SOURCE_DIR/linux-$VERSION"
+	mv "$_SOURCE_DIR" "$_SOURCE_DIR$TAG"
+	_SOURCE_DIR="$_SOURCE_DIR$TAG"
+	cd "$_SOURCE_DIR"
+}
+_prepare_source_dir
+
+_prepare_config_file()
+{
+	# Obtain .config file
+	if [ -n "$CONFIG" ]; then
+		cp "$CONFIG" ./.config
+	else
+		zcat "/proc/config.gz" > ./.config
+	fi
+	
+	# Update .config file with defaults 
+	yes "" | make oldconfig
+	
+	# Run menuconfig if requested
+	if [ "$MENUCONFIG" == "yes" ]
+	then
+		while true
+		do
+			make menuconfig
+			echo "* Confirm configuration?"
+			echo "* -- 'y'  - confirm and proceed to build"
+			echo "* -- 'n'  - re-enter menuconfig"
+			echo "* -- CTRL+C  - exit script"
+			echo "*"
+			
+			while true
+			do
+				echo -n "* Enter selection [y/n]: "
+				read _LINE
+				case "$_LINE" in
+					"y") break 2 ;;
+					"n") break 1 ;;
+					*) echo "* ERROR: Invalid input: $_LINE" >&2 ;;
+				esac 
+			done
+		done
+	fi
+	
+	# Remove auto-generated .config.old
+	if [ -f "./.config.old" ]; then rm "./.config.old"; fi
+	
+	# Apply $TAG to 'CONFIG_LOCALVERSION'
+	sed -i '/CONFIG_LOCALVERSION=/ { s/=""/="'"$TAG"'"/ }' ./.config
+}
+_prepare_config_file
+
+
+#
+# BUILD AND INSTALL (chroot'd)
+#
+
+_prepare_destination_dirs()
+{
+	mkdir -p \
+		"$_PACKAGE_ROOT/_rw/boot" \
+		"$_PACKAGE_ROOT/_rw/lib/modules" \
+		"$_PACKAGE_ROOT/_rw/lib/firmware"
+}
+_prepare_destination_dirs
+
+_build_and_install()
+{
+	# Disable stop signals
+	trap 'exit 1' SIGINT SIGQUIT SIGTSTP
+	
+	# Will be run chroot'd
+	set -e
+	cd "$1"
+	
+	# Build the thing; this will build bzImage and its modules
+	make -j"$2"
+	rm "./.version"
+	
+	# Install
+	cp "./arch/$3/boot/bzImage" "/boot/vmlinuz-custom-$4"
+	cp "./System.map" "/boot/System.map-custom-$4"
+	cp "./.config" "/boot/config-custom-$4"
+	make modules_install
+}
+_chroot_build_and_install()
+{
+	# Disable stop signals
+	trap 'echo -n ""' SIGINT SIGQUIT SIGTSTP
+	
+	local _CHROOT_RO_MOUNTS="/bin /dev /etc /lib /lib64 /usr" # NOTE: These are system's directories
+	local _CHROOT_RW_MOUNTS="/boot /usr/src /lib/modules /lib/firmware" # NOTE: These are the directories in "$_PACKAGE_ROOT/_rw"
+	
+	# *MUST NOT* exit if any command fails because `umount`s need to be called in any case
+	set +e
+	
+	# Mount necessary system dirs (read-only)
+	mkdir -p \
+		"$_PACKAGE_ROOT/tmp" \
+		"$_PACKAGE_ROOT/boot"
+	for _MOUNT in $_CHROOT_RO_MOUNTS
+	do
+		mkdir -p "$_PACKAGE_ROOT/$_MOUNT"
+		mount -o bind,ro "$_MOUNT" "$_PACKAGE_ROOT/$_MOUNT"
+	done
+	for _MOUNT in $_CHROOT_RW_MOUNTS
+	do
+		mount -o bind,rw "$_PACKAGE_ROOT/_rw/$_MOUNT" "$_PACKAGE_ROOT/$_MOUNT"
+	done
+	
+	local _CHROOT_SOURCE_DIR="$(echo "$_SOURCE_DIR" | sed "s#^$_PACKAGE_ROOT/_rw##")"
+	export -f "_build_and_install"
+	chroot "$_PACKAGE_ROOT" /bin/bash -c "_build_and_install \"$_CHROOT_SOURCE_DIR\" $MULTICORE \"$ARCH\" \"$VERSION$TAG\""
+	local _RET=$?
+	
+	# Once again disable stop signals, because chroot'd changed them
+	trap 'echo -n ""' SIGINT SIGQUIT SIGTSTP
+	
+	# Unmount what we mounted
+	for _MOUNT in $_CHROOT_RW_MOUNTS
+	do
+		umount "$_PACKAGE_ROOT/$_MOUNT"
+	done
+	for _MOUNT in $_CHROOT_RO_MOUNTS
+	do
+		umount "$_PACKAGE_ROOT/$_MOUNT"
+		rm -rf "$_PACKAGE_ROOT/$_MOUNT"
+	done
+	rm -rf \
+		"$_PACKAGE_ROOT/tmp" \
+		"$_PACKAGE_ROOT/boot" \
+		"$_PACKAGE_ROOT/_rw/lib/firmware" # We don't want firmware?
+	
+	set -e
+	
+	# Re-enable stop signals
+	trap - SIGINT SIGQUIT SIGTSTP
+	
+	if [ $_RET -ne 0 ]; then exit $_RET; fi
+}
+_chroot_build_and_install
+
+
+#
+# PREPARE AND MAKE PKG
+#
+
+cd $_PACKAGE_ROOT
+
+_prepare_package_root()
+{
+	# Move package contents to its root
+	mv "$_PACKAGE_ROOT/_rw/"* "$_PACKAGE_ROOT"
+	rm -rf "$_PACKAGE_ROOT/_rw"
+	
+	# Remove source code if $PKGSOURCE is not "yes"
+	if [ "$PKGSOURCE" != "yes" ]
+	then
+		rm -rf "$_PACKAGE_ROOT/usr"
+	fi
+	
+	# Make "$_PACKAGE_ROOT/install" directory and slack-desc and doinst.sh files
+	mkdir -p "$_PACKAGE_ROOT/install"
+	
+	cat << EOF > "$_PACKAGE_ROOT/install/slack-desc"
+# HOW TO EDIT THIS FILE:
+# The "handy ruler" below makes it easier to edit a package description.  Line
+# up the first '|' above the ':' following the base package name, and the '|'
+# on the right side marks the last column you can put a character in.  You must
+# make exactly 11 lines for the formatting to be correct.  It's also
+# customary to leave one space after the ':'.
+
+$PRGNAME|-----handy-ruler------------------------------------------------------------|
+$PRGNAME: $PRGNAME - $VERSION$TAG
+$PRGNAME:
+$PRGNAME: Custom build of Linux kernel and its modules.
+$PRGNAME: Version: $VERSION ($VERSION$TAG)
+$PRGNAME:
+EOF
+	
+	cat << EOF > "$_PACKAGE_ROOT/install/doinst.sh"
+( cd boot ; rm -rf vmlinuz-custom )
+( cd boot ; ln -sf vmlinuz-custom-$VERSION$TAG vmlinuz-custom )
+( cd boot ; rm -rf System.map-custom )
+( cd boot ; ln -sf System.map-custom-$VERSION$TAG System.map-custom )
+( cd boot ; rm -rf config-custom )
+( cd boot ; ln -sf config-custom-$VERSION$TAG config-custom )
+EOF
+	
+	if [ "$PKGSOURCE" == "yes" ]
+	then
+		cat << EOF >> "$_PACKAGE_ROOT/install/doinst.sh"
+( cd lib/modules/$VERSION$TAG ; rm -rf build )
+( cd lib/modules/$VERSION$TAG ; ln -sf /usr/src/linux-$VERSION$TAG build )
+( cd lib/modules/$VERSION$TAG ; rm -rf source )
+( cd lib/modules/$VERSION$TAG ; ln -sf /usr/src/linux-$VERSION$TAG source )
+EOF
+	fi
+
+}
+_prepare_package_root
+
+_create_pkg()
+{
+	rm -rf "$_PACKAGE_OUTPUT"
+	makepkg -l y -c n "$_PACKAGE_OUTPUT"
+}
+_create_pkg
