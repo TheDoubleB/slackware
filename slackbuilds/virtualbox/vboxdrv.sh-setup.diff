@@ -1,62 +1,71 @@
---- /tmp/SBo/VirtualBox-5.1.26/src/VBox/Installer/linux/vboxdrv.sh	2017-07-27 15:18:22.000000000 +0200
-+++ /disk/home/beebee/Temporary/_modified_vboxdrv.sh	2017-08-02 18:54:39.135246693 +0200
-@@ -52,14 +52,12 @@
- export USER=$USERNAME
- 
- if test -n "${INSTALL_DIR}" && test -x "${INSTALL_DIR}/VirtualBox"; then
--    MODULE_SRC="${INSTALL_DIR}/src/vboxhost"
-+    :
- elif test -x /usr/lib/virtualbox/VirtualBox; then
-     INSTALL_DIR=/usr/lib/virtualbox
--    MODULE_SRC="/usr/share/virtualbox/src/vboxhost"
- elif test -x "${SCRIPT_DIR}/VirtualBox"; then
-     # Executing from the build directory
-     INSTALL_DIR="${SCRIPT_DIR}"
--    MODULE_SRC="${INSTALL_DIR}/src"
- else
-     # Silently exit if the package was uninstalled but not purged.
-     # Applies to Debian packages only (but shouldn't hurt elsewhere)
-@@ -67,7 +65,6 @@
- fi
- VIRTUALBOX="${INSTALL_DIR}/VirtualBox"
- VBOXMANAGE="${INSTALL_DIR}/VBoxManage"
--BUILDINTMP="${MODULE_SRC}/build_in_tmp"
- if test -u "${VIRTUALBOX}"; then
-     GROUP=root
-     DEVICE_MODE=0600
-@@ -387,35 +384,7 @@
+--- /tmp/SBo/VirtualBox-6.0.14/src/VBox/Installer/linux/vboxdrv.sh	2019-10-29 20:49:53.588194436 +0100
++++ _modified_vboxdrv.sh	2019-10-29 21:11:30.999271496 +0100
+@@ -444,68 +444,7 @@
  # setup_script
  setup()
  {
 -    begin_msg "Building VirtualBox kernel modules" console
--    if ! $BUILDINTMP \
+-    log "Building the main VirtualBox module."
+-    if ! myerr=`$BUILDINTMP \
 -        --save-module-symvers /tmp/vboxdrv-Module.symvers \
 -        --module-source "$MODULE_SRC/vboxdrv" \
--        --no-print-directory install >> $LOG 2>&1; then
--        "${INSTALL_DIR}/check_module_dependencies.sh"
+-        --no-print-directory install 2>&1`; then
+-        "${INSTALL_DIR}/check_module_dependencies.sh" || exit 1
+-        log "Error building the module:"
+-        module_build_log "$myerr"
 -        failure "Look at $LOG to find out what went wrong"
 -    fi
--    if ! $BUILDINTMP \
+-    log "Building the net filter module."
+-    if ! myerr=`$BUILDINTMP \
 -        --use-module-symvers /tmp/vboxdrv-Module.symvers \
 -        --module-source "$MODULE_SRC/vboxnetflt" \
--        --no-print-directory install >> $LOG 2>&1; then
+-        --no-print-directory install 2>&1`; then
+-        log "Error building the module:"
+-        module_build_log "$myerr"
 -        failure "Look at $LOG to find out what went wrong"
 -    fi
--    if ! $BUILDINTMP \
+-    log "Building the net adaptor module."
+-    if ! myerr=`$BUILDINTMP \
 -        --use-module-symvers /tmp/vboxdrv-Module.symvers \
 -        --module-source "$MODULE_SRC/vboxnetadp" \
--        --no-print-directory install >> $LOG 2>&1; then
+-        --no-print-directory install 2>&1`; then
+-        log "Error building the module:"
+-        module_build_log "$myerr"
 -        failure "Look at $LOG to find out what went wrong"
 -    fi
--    if ! $BUILDINTMP \
+-    log "Building the PCI pass-through module."
+-    if ! myerr=`$BUILDINTMP \
 -        --use-module-symvers /tmp/vboxdrv-Module.symvers \
 -        --module-source "$MODULE_SRC/vboxpci" \
--        --no-print-directory install >> $LOG 2>&1; then
+-        --no-print-directory install 2>&1`; then
+-        log "Error building the module:"
+-        module_build_log "$myerr"
 -        failure "Look at $LOG to find out what went wrong"
 -    fi
 -    rm -f /etc/vbox/module_not_compiled
 -    depmod -a
+-    sync
 -    succ_msg "VirtualBox kernel modules built"
+-    # Secure boot on Ubuntu and Debian.
+-    if test -n "$HAVE_SEC_BOOT" &&
+-        type update-secureboot-policy >/dev/null 2>&1; then
+-        SHIM_NOTRIGGER=y update-secureboot-policy --new-key
+-    fi
+-    if test -f "$DEB_PUB_KEY" && test -f "$DEB_PRIV_KEY"; then
+-        HAVE_DEB_KEY=true
+-        for i in $MODULE_LIST; do
+-            kmodsign sha512 /var/lib/shim-signed/mok/MOK.priv \
+-                /var/lib/shim-signed/mok/MOK.der \
+-                /lib/modules/"$KERN_VER"/misc/"$i".ko
+-        done
+-        # update-secureboot-policy "expects" DKMS modules.
+-        # Work around this and talk to the authors as soon
+-        # as possible to fix it.
+-        mkdir -p /var/lib/dkms/vbox-temp
+-        update-secureboot-policy --enroll-key 2>/dev/null ||
+-            begin_msg "Failed to enroll secure boot key." console
+-        rmdir -p /var/lib/dkms/vbox-temp 2>/dev/null
+-    fi
 +    echo "Not implemented! Please use the virtualbox-kernel.SlackBuild available at SlackBuilds.org instead."
  }
  

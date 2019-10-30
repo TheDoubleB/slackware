@@ -1,0 +1,11 @@
+--- /tmp/SBo/VirtualBox-6.0.14/src/VBox/ImageMounter/VBoxFUSE/VBoxFUSE.cpp	2019-10-10 20:35:39.000000000 +0200
++++ _modified_VBoxFUSE.cpp	2019-10-30 17:25:49.712598970 +0100
+@@ -53,6 +53,8 @@
+ #include <iprt/initterm.h>
+ #include <iprt/stream.h>
+ 
++#define PVBOXHDD PVDISK
++
+ 
+ /*********************************************************************************************************************************
+ *   Structures and Typedefs                                                                                                      *

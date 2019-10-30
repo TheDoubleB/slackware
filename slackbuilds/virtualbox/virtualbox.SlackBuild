@@ -25,7 +25,7 @@
 
 PRGNAM=virtualbox
 SRCNAM=VirtualBox
-VERSION=${VERSION:-5.1.26}
+VERSION=${VERSION:-6.0.14}
 BUILD=${BUILD:-1}
 TAG=${TAG:-_SBo}
 
@@ -131,6 +131,12 @@ MODE="755"
 # We don't want an init-script building kernel modules.
 # Use virtualbox-kernel.SlackBuild for this.
 patch -d src/VBox/Installer/linux -i $CWD/vboxdrv.sh-setup.diff
+
+# Fix CPU defines
+patch -d src/VBox/Devices/PC -i $CWD/vbox-cpuhotplug.dsl-cpu.patch
+
+# Fix VBoxFUSE HDD define
+patch -d src/VBox/ImageMounter/VBoxFUSE -i $CWD/VBoxFUSE.cpp-pvboxhdd.patch
 
 # Fix building against newer versions of gsoap
 patch -p1 -i $CWD/virtualbox-gsoap.patch
