@@ -1,0 +1,12 @@
+--- /tmp/SBo/VirtualBox-6.0.14/src/VBox/Frontends/VirtualBox/src/main.cpp	2019-10-10 20:35:16.000000000 +0200
++++ _modified_main.cpp	2020-01-03 20:14:01.710146696 +0100
+@@ -594,6 +594,9 @@
+ 
+ int main(int argc, char **argv, char **envp)
+ {
++    /* Enable QT's SetUID setting since it is not enabled by default since QT 5.12 */
++    QCoreApplication::setSetuidAllowed(true);
++
+ # ifdef VBOX_WS_X11
+     /* Make sure multi-threaded environment is safe: */
+     if (!MakeSureMultiThreadingIsSafe())

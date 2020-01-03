@@ -132,6 +132,9 @@ MODE="755"
 # Use virtualbox-kernel.SlackBuild for this.
 patch -d src/VBox/Installer/linux -i $CWD/vboxdrv.sh-setup.diff
 
+# Fix QT's SetUID issue
+patch -d src/VBox/Frontends/VirtualBox/src -i $CWD/main.cpp-virtualbox-setuid.patch
+
 # Fix CPU defines
 patch -d src/VBox/Devices/PC -i $CWD/vbox-cpuhotplug.dsl-cpu.patch
 
