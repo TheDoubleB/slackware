@@ -64,7 +64,7 @@ fi
 
 # Support for the qt4-frontend
 if [ "${HEADLESS:-no}" = "no" ]; then
-  guiapp="VirtualBox VBoxSDL"
+  guiapp="VirtualBox VirtualBoxVM VBoxSDL"
 else
   gui+=" --build-headless"
   guiapp=""
