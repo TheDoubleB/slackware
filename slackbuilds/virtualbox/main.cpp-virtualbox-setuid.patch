@@ -1,6 +1,6 @@
---- /tmp/SBo/VirtualBox-6.0.14/src/VBox/Frontends/VirtualBox/src/main.cpp	2019-10-10 20:35:16.000000000 +0200
-+++ _modified_main.cpp	2020-01-03 20:14:01.710146696 +0100
-@@ -594,6 +594,9 @@
+--- /tmp/SBo/VirtualBox-6.1.6/src/VBox/Frontends/VirtualBox/src/main.cpp	2020-04-09 19:41:45.000000000 +0200
++++ _modified_main.cpp	2020-04-21 20:28:07.424153681 +0200
+@@ -911,6 +911,9 @@
  
  int main(int argc, char **argv, char **envp)
  {

@@ -25,7 +25,7 @@
 
 PRGNAM=virtualbox
 SRCNAM=VirtualBox
-VERSION=${VERSION:-6.0.14}
+VERSION=${VERSION:-6.1.6}
 BUILD=${BUILD:-1}
 TAG=${TAG:-_SBo}
 
@@ -135,12 +135,6 @@ patch -d src/VBox/Installer/linux -i $CWD/vboxdrv.sh-setup.diff
 # Fix QT's SetUID issue
 patch -d src/VBox/Frontends/VirtualBox/src -i $CWD/main.cpp-virtualbox-setuid.patch
 
-# Fix CPU defines
-patch -d src/VBox/Devices/PC -i $CWD/vbox-cpuhotplug.dsl-cpu.patch
-
-# Fix VBoxFUSE HDD define
-patch -d src/VBox/ImageMounter/VBoxFUSE -i $CWD/VBoxFUSE.cpp-pvboxhdd.patch
-
 # Fix building against newer versions of gsoap
 patch -p1 -i $CWD/virtualbox-gsoap.patch
 
@@ -169,11 +163,6 @@ cp $CWD/LocalConfig.kmk .
 sed -i "s|LIBDIR|lib$LIBDIRSUFFIX|" ./LocalConfig.kmk
 
 kmk -j ${JOBS} LOCALCFG=./LocalConfig.kmk
-
-# build VBoxFUSE
-cd src/VBox/ImageMounter/VBoxFUSE
-  kmk -j ${JOBS}
-cd -
 
 mkdir -p $PKG/usr/{lib$LIBDIRSUFFIX,share,include}/virtualbox \
   $PKG/usr/{bin,src} \
@@ -227,8 +216,7 @@ cd out/linux.$BUILDDIR/release/bin/
   install -m $MODE -g $GROUP VBoxSysInfo.sh $PKG/usr/share/virtualbox/
   install -m $MODE -g $GROUP VBoxCreateUSBNode.sh $PKG/usr/share/virtualbox/
   install -m $MODE -g $GROUP VBoxTunctl $PKG/usr/bin/
-  install -m $MODE -g $GROUP VBoxFUSE $PKG/usr/bin/
-  rm -f VBoxSysInfo.sh VBoxCreateUSBNode.sh VBoxTunctl VBoxFUSE
+  rm -f VBoxSysInfo.sh VBoxCreateUSBNode.sh VBoxTunctl
   mv * $PKG/usr/lib$LIBDIRSUFFIX/virtualbox/
   chown -R root:$GROUP $PKG/usr/lib$LIBDIRSUFFIX/virtualbox/
   chmod -R $MODE $PKG/usr/lib$LIBDIRSUFFIX/virtualbox/

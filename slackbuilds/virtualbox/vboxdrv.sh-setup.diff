@@ -1,6 +1,6 @@
---- /tmp/SBo/VirtualBox-6.0.14/src/VBox/Installer/linux/vboxdrv.sh	2019-10-29 20:49:53.588194436 +0100
-+++ _modified_vboxdrv.sh	2019-10-29 21:11:30.999271496 +0100
-@@ -444,68 +444,7 @@
+--- /tmp/SBo/VirtualBox-6.1.6/src/VBox/Installer/linux/vboxdrv.sh	2020-04-09 19:42:04.000000000 +0200
++++ _modified_vboxdrv.sh	2020-04-21 20:19:18.672122275 +0200
+@@ -451,70 +451,7 @@
  # setup_script
  setup()
  {
@@ -33,14 +33,16 @@
 -        module_build_log "$myerr"
 -        failure "Look at $LOG to find out what went wrong"
 -    fi
--    log "Building the PCI pass-through module."
--    if ! myerr=`$BUILDINTMP \
--        --use-module-symvers /tmp/vboxdrv-Module.symvers \
--        --module-source "$MODULE_SRC/vboxpci" \
--        --no-print-directory install 2>&1`; then
--        log "Error building the module:"
--        module_build_log "$myerr"
--        failure "Look at $LOG to find out what went wrong"
+-    if test -e "$MODULE_SRC/vboxpci"; then
+-        log "Building the PCI pass-through module."
+-        if ! myerr=`$BUILDINTMP \
+-            --use-module-symvers /tmp/vboxdrv-Module.symvers \
+-            --module-source "$MODULE_SRC/vboxpci" \
+-            --no-print-directory install 2>&1`; then
+-            log "Error building the module:"
+-            module_build_log "$myerr"
+-            failure "Look at $LOG to find out what went wrong"
+-        fi
 -    fi
 -    rm -f /etc/vbox/module_not_compiled
 -    depmod -a
