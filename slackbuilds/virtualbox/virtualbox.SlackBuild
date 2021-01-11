@@ -26,7 +26,7 @@
 PRGNAM=virtualbox
 SRCNAM=VirtualBox
 VERSION=${VERSION:-6.1.16}
-BUILD=${BUILD:-1}
+BUILD=${BUILD:-2}
 TAG=${TAG:-_SBo}
 
 if [ -z "$ARCH" ]; then
@@ -65,9 +65,11 @@ fi
 # Support for the qt4-frontend
 if [ "${HEADLESS:-no}" = "no" ]; then
   guiapp="VirtualBox VirtualBoxVM VBoxSDL"
+  guiapp_nosuid="VirtualBox"
 else
   gui+=" --build-headless"
   guiapp=""
+  guiapp_nosuid=""
 fi
 
 # Enable building of java bindings
@@ -131,9 +133,6 @@ MODE="755"
 # We don't want an init-script building kernel modules.
 # Use virtualbox-kernel.SlackBuild for this.
 patch -d src/VBox/Installer/linux -i $CWD/vboxdrv.sh-setup.diff
-
-# Fix QT's SetUID issue
-patch -d src/VBox/Frontends/VirtualBox/src -i $CWD/main.cpp-virtualbox-setuid.patch
 
 # Fix building against newer versions of gsoap
 patch -p1 -i $CWD/virtualbox-gsoap.patch
@@ -248,6 +247,9 @@ fi
 if [ "$harden" = "--enable-hardening" ]; then
   for i in VBoxHeadless $guiapp VBoxNetDHCP VBoxNetAdpCtl; do
     chmod 4711 $PKG/usr/lib$LIBDIRSUFFIX/virtualbox/$i
+  done
+  for i in $guiapp_nosuid; do
+    chmod -s $PKG/usr/lib$LIBDIRSUFFIX/virtualbox/$i
   done
 fi
 
