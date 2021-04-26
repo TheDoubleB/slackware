@@ -1,6 +1,5 @@
-diff -u -r VirtualBox-5.0.10.orig/src/VBox/Main/webservice/Makefile.kmk VirtualBox-5.0.10/src/VBox/Main/webservice/Makefile.kmk
---- VirtualBox-5.0.10.orig/src/VBox/Main/webservice/Makefile.kmk	2015-11-10 18:06:29.000000000 +0100
-+++ VirtualBox-5.0.10/src/VBox/Main/webservice/Makefile.kmk	2015-11-22 09:58:21.669118291 +0100
+--- a/src/VBox/Main/webservice/Makefile.kmk	2015-11-10 18:06:29.000000000 +0100
++++ b/src/VBox/Main/webservice/Makefile.kmk	2015-11-22 09:58:21.669118291 +0100
 @@ -159,7 +159,6 @@
  RECOMPILE_ON_MAKEFILE_CURRENT := $(MAKEFILE_CURRENT)
  

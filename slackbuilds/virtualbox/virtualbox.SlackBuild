@@ -132,7 +132,7 @@ MODE="755"
 
 # We don't want an init-script building kernel modules.
 # Use virtualbox-kernel.SlackBuild for this.
-patch -d src/VBox/Installer/linux -i $CWD/vboxdrv.sh-setup.diff
+patch -p1 -i $CWD/vboxdrv.sh-setup.patch
 
 # Fix building against newer versions of gsoap
 patch -p1 -i $CWD/virtualbox-gsoap.patch
