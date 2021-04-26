@@ -1,0 +1,45 @@
+diff -ru a/src/3rdparty/autotrace/autotrace.h b/src/3rdparty/autotrace/autotrace.h
+--- a/src/3rdparty/autotrace/autotrace.h	2021-01-15 11:04:25.000000000 +0100
++++ b/src/3rdparty/autotrace/autotrace.h	2021-04-26 15:51:17.898978774 +0200
+@@ -23,6 +23,9 @@
+ 
+ #include <stdio.h>
+ 
++#include "types.h"
++#include "color.h"
++
+ #ifdef __cplusplus
+ extern "C" {
+ #endif                          /* __cplusplus */
+@@ -35,9 +38,6 @@
+  * Typedefs
+  * ===================================================================== */
+ 
+-#include "types.h"
+-#include "color.h"
+-
+ /* Third degree is the highest we deal with.  */
+   enum _at_polynomial_degree {
+     AT_LINEARTYPE = 1,
+diff -ru a/src/3rdparty/autotrace/color.h b/src/3rdparty/autotrace/color.h
+--- a/src/3rdparty/autotrace/color.h	2021-01-15 11:04:25.000000000 +0100
++++ b/src/3rdparty/autotrace/color.h	2021-04-26 15:56:54.346956229 +0200
+@@ -24,6 +24,10 @@
+ #include <glib.h>
+ #include <glib-object.h>
+ 
++#ifdef __cplusplus
++extern "C" {
++#endif
++
+ typedef struct _at_color at_color;
+ struct _at_color {
+   guint8 r;
+@@ -43,4 +47,7 @@
+ GType at_color_get_type(void);
+ #define AT_TYPE_COLOR (at_color_get_type ())
+ 
++#ifdef __cplusplus
++}
++#endif
+ #endif /* not AT_COLOR_H */
